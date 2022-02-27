@@ -10,7 +10,19 @@ const routes: Routes = [
     path: '',
     redirectTo: 'home',
     pathMatch: 'full'
+  },  {
+    path: 'reading',
+    loadChildren: () => import('./reading/reading.module').then( m => m.ReadingPageModule)
   },
+  {
+    path: 'callback',
+    loadChildren: () => import('./callback/callback.module').then( m => m.CallbackPageModule)
+  },
+  {
+    path: 'login',
+    loadChildren: () => import('./login/login.module').then( m => m.LoginPageModule)
+  },
+
 ];
 
 @NgModule({
