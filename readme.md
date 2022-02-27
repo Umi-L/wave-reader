@@ -1,0 +1,1 @@
+An ionic & angularjs reader with text to speech and dropbox integration.
