@@ -31,4 +31,8 @@ export class StorageService {
   public clearStorage(){
     this._storage.clear();
   }
+
+  public async keys(){
+    return this._storage.keys();
+  }
 }
