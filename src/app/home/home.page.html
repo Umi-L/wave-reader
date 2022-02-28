@@ -1,9 +1,19 @@
 <ion-header>
-  <h2 style="margin: 10px;">Home</h2>
+  <div class="container">
+    <ion-toolbar>
+    <h2 style="margin: 10px;">Home</h2>
+    <ion-buttons slot="end">
+      <ion-button (click)="f.click()">
+        <ion-icon name="add"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    </ion-toolbar>
+    <input type="file" #f id="bookInput" accept=".epub" class="flex-ceter" style="display: none;">
+
+  </div>
 </ion-header>
 
 <ion-content>
-  <input type="file" id="bookInput" accept=".epub" class="flex-ceter">
   <button (click)="clearStorage()">clearStorage</button>
   <ion-grid>
     <ion-row>

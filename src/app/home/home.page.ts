@@ -5,9 +5,11 @@ import { DataPassService } from '../data-pass.service';
 import { Router } from '@angular/router';
 import { StorageService } from '../storage.service';
 import { element } from 'protractor';
+import { ToastController } from '@ionic/angular';
 
 var isApp: boolean;
 var acsess_token;
+declare var ePub: any;
 
 @Component({
   selector: 'app-home',
@@ -18,12 +20,14 @@ export class HomePage {
   constructor(
     private router: Router,
     private dataPassService: DataPassService,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private toastCtrl: ToastController,
   ) {}
 
   async ngOnInit() {
 
     await this.storageService.init();
+
 
     acsess_token = await this.storageService.get('access_token');
 
@@ -33,106 +37,29 @@ export class HomePage {
       this.router.navigate(['login']);
     }
 
-    let data = {
-      path: '',
-      recursive: true,
-    };
+    this.loadBooks()
 
-    let url = 'https://api.dropboxapi.com/2/files/list_folder';
-    let response = await this.apiCall(url, data);
-
-    console.log(response);
-
-    for (let i = 0; i < response.entries.length; i++) {
-      let entry = response.entries[i];
-      console.log(entry);
-
-      var re = /(?:\.([^.]+))?$/;
-
-      if (entry[".tag"] == "file" && re.exec(entry.name)[1] == "epub"){
-        let card = document.createElement('ion-card');
-        card.button = true;
-        card.onclick = async () => {
-          let headers = {
-            method: 'POST',
-            headers: {
-              Authorization: 'Bearer ' + acsess_token,
-              'Content-Type': 'text/plain',
-              'Dropbox-API-Arg': JSON.stringify({ path: entry.path_lower }),
-            },
-          };
-
-          let url = 'https://content.dropboxapi.com/2/files/download';
-          let response = await this.apiCall(url, null, headers, false);
-          console.log('request processed');
-
-          let fileResponse = await this.parseDownloadResponse(response);
-
-          let file = new File([fileResponse['result'].fileBlob], entry.name);
-
-          console.log(file);
-
-          this.openBook(file);
-        };
-
-        let headers = {
-          method: 'POST',
-          headers: {
-            Authorization: 'Bearer ' + acsess_token,
-            'Content-Type': 'text/plain',
-            'Dropbox-API-Arg': JSON.stringify({
-              path: entry.path_lower,
-              size: 'w256h256',
-            }),
-          },
-        };
-
-        let url = 'https://content.dropboxapi.com/2/files/get_thumbnail';
-        let imageResponse = await this.apiCall(url, null, headers, false);
-
-        let imageFileResponse = await this.parseDownloadResponse(imageResponse);
-
-        let imageFile = new File(
-          [imageFileResponse['result'].fileBlob],
-          'pic.jpeg'
-        );
-
-        let image = document.createElement('img');
-
-        image.src = URL.createObjectURL(imageFile);
-
-        let text = document.createElement('ion-card-title');
-        text.innerHTML = entry.name.replace(/\.[^/.]+$/, '');
-
-        let cardHead = card.appendChild(
-          document.createElement('ion-card-header')
-        );
-        let cardBody = card.appendChild(
-          document.createElement('ion-card-content')
-        );
-
-        cardBody.appendChild(image);
-        cardHead.appendChild(text);
-
-        card.appendChild(cardHead);
-        card.appendChild(cardBody);
-
-        let windows = document.querySelectorAll('ion-content');
-        let grid = windows[windows.length - 1].querySelector('ion-grid');
-
-        let rows = grid.querySelectorAll('ion-row');
-        rows[rows.length - 1].appendChild(card);
-      }
-    }
-
+    this.updateBookData()
 
     window.speechSynthesis.cancel();
 
-    this.backupBookLocations();
-
     const bookInput = document.getElementById('bookInput');
     bookInput.onchange = async (e) => {
-      this.openBook((<HTMLInputElement>bookInput).files[0]);
+      let toast = await this.toastCtrl.create({message: "Uploading", "duration":1000, position:"bottom"})
+      toast.present();
+
+      var resp =  await this.uploadFile((<HTMLInputElement>bookInput).files[0], {"path":"/"+(<HTMLInputElement>bookInput).files[0].name});
+      
+      if (resp.status == 200){
+        this.clearBooks();
+        this.loadBooks();
+        let toast = await this.toastCtrl.create({message: "book added to library!", "duration":1000, position:"bottom"});
+        toast.present();
+      }
+      else{
+        let toast = await this.toastCtrl.create({message: "There has been an error while uploading your book.", "duration":7000, position:"bottom"});
+        toast.present();
+      }
     };
   }
   clearStorage() {
@@ -213,28 +140,194 @@ export class HomePage {
       }
     }
 
-    console.log(tempStorage)
-    var blob = new Blob([JSON.stringify(tempStorage)], {type: 'text/plain'})
 
-    const myJsonData = {
-      id: Date.now(),
-      title: "Untitled Thing",
-      description: "Some description here..."
-  };
+    var file = new File([JSON.stringify(tempStorage)], "data.json")
 
-    var file = new File([JSON.stringify(myJsonData, null, 2)], "data.json")
+    let url = 'https://content.dropboxapi.com/2/files/upload';
+    let response = await this.uploadFile(file, {"path":"/data.json", "autorename": false, mode:{".tag":"overwrite"}});
+  }
+
+  async makeCard(entry){
+    let card = document.createElement('ion-card');
+    card.button = true;
+    card.onclick = async () => {
+      
+      let file = await this.downloadFile({path:entry.path_lower}, entry.name);
+
+      this.openBook(file);
+    };
+
+    let image = document.createElement('img');
+
+    this.getBookImage(entry.path_lower, image);
+
+    image.src = "../assets/book-cover-placeholder.png";
+
+    let text = document.createElement('ion-card-title');
+    text.innerHTML = entry.name.replace(/\.[^/.]+$/, '');
+
+    let cardHead = card.appendChild(
+      document.createElement('ion-card-header')
+    );
+    let cardBody = card.appendChild(
+      document.createElement('ion-card-content')
+    );
+
+    cardBody.appendChild(image);
+    cardHead.appendChild(text);
+
+
+    card.appendChild(cardHead);
+    card.appendChild(cardBody);
+
+    let windows = document.querySelectorAll('ion-content');
+    let grid = windows[windows.length - 1].querySelector('ion-grid');
+
+    let rows = grid.querySelectorAll('ion-row');
+    rows[rows.length - 1].appendChild(card);
+  }
+  async getBookImage(path,img){
 
     let headers = {
       method: 'POST',
       headers: {
         Authorization: 'Bearer ' + acsess_token,
-        'Content-Type': 'application/octet-stream',
-        'Dropbox-API-Arg': JSON.stringify({"path":"/data.json", "autorename": false, mode:{".tag":"overwrite"}}),
+        'Content-Type': 'text/plain',
+        'Dropbox-API-Arg': JSON.stringify({
+          path: path,
+          size: 'w256h256',
+        }),
       },
     };
 
-    let url = 'https://content.dropboxapi.com/2/files/upload';
-    let response = await this.apiCall(url, file, headers, false);
-    console.log(response);
+    let url = 'https://content.dropboxapi.com/2/files/get_thumbnail';
+    let imageResponse = await this.apiCall(url, null, headers, false);
+
+    let imageFileResponse = await this.parseDownloadResponse(imageResponse);
+
+    let imageFile = new File(
+      [imageFileResponse['result'].fileBlob],
+      'pic.jpeg'
+    );
+
+    img.src = URL.createObjectURL(imageFile);
+  }
+
+  uploadFile(file, args){
+    const url = "https://content.dropboxapi.com/2/files/upload"
+
+    const fetchOptions = {
+      body: file,
+      method: 'POST',
+      headers: {
+        "Authorization": 'Bearer ' + acsess_token,
+        'Content-Type': 'application/octet-stream',
+        'Dropbox-API-Arg': JSON.stringify(args),
+      },
+    };
+
+    return fetch(url,fetchOptions).then((response) => {return response});
+  }
+  async loadBooks(){
+    let data = {
+      path: '',
+      recursive: true,
+    };
+  
+    let url = 'https://api.dropboxapi.com/2/files/list_folder';
+    let response = await this.apiCall(url, data);
+  
+  
+    for (let i = 0; i < response.entries.length; i++) {
+      let entry = response.entries[i];
+  
+      var re = /(?:\.([^.]+))?$/;
+  
+      if (entry[".tag"] == "file" && re.exec(entry.name)[1] == "epub"){
+        this.makeCard(entry)
+      }
+    }
+  }
+  clearBooks(){
+    let windows = document.querySelectorAll('ion-content');
+    let grid = windows[windows.length - 1].querySelector('ion-grid');
+
+    let rows = grid.querySelectorAll('ion-row');
+    for (var i = 0; i < rows.length; i++){
+      rows[i].innerHTML = "";
+    }
+  }
+
+  async updateBookData(){
+    let data = await this.downloadFile({path:"/data.json"},"data.json");
+    let callback = async (fileData) => {
+      console.log(await fileData)
+
+      let jsonData = JSON.parse(fileData);
+
+      let serverKeys = Array.from(jsonData.keys());
+      let clientKeys = await this.storageService.keys();
+
+      let overlapped = [].concat(serverKeys, clientKeys);
+      let keys = [...new Set(overlapped)]
+
+      var EpubCFI =  new ePub.CFI();
+
+      var serverChanged = false;
+
+      for (const key in keys){
+        console.log(key)
+        let localValue = await this.storageService.get(key);
+        if (localValue != undefined && localValue != null){
+          let highestValue = EpubCFI.compare(localValue, jsonData[key]);
+          if (highestValue == 1){
+            this.storageService.set(key, jsonData[key]);
+          }
+          else if (highestValue == -1){
+            serverChanged = true;
+            jsonData[key] = localValue;
+          }
+        }
+        else{
+          this.storageService.set(key, jsonData[key]);
+        }
+      }
+      if (serverChanged){
+        var file = new File([JSON.stringify(jsonData)], "data.json")
+        this.uploadFile(file, {"path":"/data.json", "autorename": false, mode:{".tag":"overwrite"}})
+      }
+    }
+    this.readFile(data, callback);
+    
+
+  }
+
+  async downloadFile(data:object, fileName:string){
+    let headers = {
+      method: 'POST',
+      headers: {
+        "Authorization": 'Bearer ' + acsess_token,
+        'Content-Type': 'text/plain',
+        'Dropbox-API-Arg': JSON.stringify(data),
+      },
+    };
+
+    let url = 'https://content.dropboxapi.com/2/files/download';
+    let response = await this.apiCall(url, null, headers, false);
+
+    let fileResponse = await this.parseDownloadResponse(response);
+
+    let file = new File([fileResponse['result'].fileBlob], fileName);
+    return file;
+  }
+  readFile(file, callback){
+    let fileReader = new FileReader();
+
+    fileReader.onload = () =>{
+      callback(fileReader.result)
+    };
+
+    fileReader.readAsText(file);
   }
 }
+
