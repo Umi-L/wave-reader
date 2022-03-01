@@ -18,7 +18,7 @@ export class LoginPage implements OnInit {
     await this.storageService.init();
 
     let dropboxKey = 'pzeefxxnpapocfu';
-    let redirect_uri = 'https://wave-reader.web.app/callback'
+    let redirect_uri = 'http://localhost:8100/callback'
 
     var code_verifier = this.generateVerifier();
 

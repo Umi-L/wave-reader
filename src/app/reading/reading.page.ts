@@ -41,53 +41,56 @@ export class ReadingPage implements OnInit {
     var displayed;
     if (data[1] != undefined){
       displayed = rendition.display(data[1]);
-      displayed = rendition.display(data[1]);
-
     }else{
       displayed = rendition.display()
     }
 
-    var startTime;
 
-    document.getElementById("click-left").onmousedown = () =>{
-      startTime = new Date();
-    }
-    document.getElementById("click-right").onmousedown = () =>{
-      startTime = new Date();
-    }
-    document.getElementById("click-menu").onmousedown = () =>{
-      startTime = new Date();
-    }
-    document.getElementById("click-left").onmouseup = () =>{
-      let endTime = new Date();
+    // var startTime;
 
-      let time = endTime.getTime() - startTime.getTime()
+    // document.getElementById("click-left").onmousedown = () =>{
+    //   startTime = new Date();
+    // }
+    // document.getElementById("click-right").onmousedown = () =>{
+    //   startTime = new Date();
+    // }
+    // document.getElementById("click-menu").onmousedown = () =>{
+    //   startTime = new Date();
+    // }
+    // document.getElementById("click-left").onmouseup = () =>{
+    //   let endTime = new Date();
 
-      if (time < 1000){
-        this.pageLeft();
-      }
-    }
-    document.getElementById("click-right").onmouseup = () =>{
-      let endTime = new Date();
+    //   let time = endTime.getTime() - startTime.getTime()
 
-      let time = endTime.getTime() - startTime.getTime()
+    //   if (time < 1000){
+    //     this.pageLeft();
+    //   }
+    // }
+    // document.getElementById("click-right").onmouseup = () =>{
+    //   let endTime = new Date();
 
-      if (time < 1000){
-        this.pageRight();
-      }
-    }
-    document.getElementById("click-menu").onmouseup = () =>{
-      let endTime = new Date();
+    //   let time = endTime.getTime() - startTime.getTime()
 
-      let time = endTime.getTime() - startTime.getTime()
+    //   if (time < 1000){
+    //     this.pageRight();
+    //   }
+    // }
+    // document.getElementById("click-menu").onmouseup = () =>{
+    //   let endTime = new Date();
 
-      if (time < 1000){
-        this.toggleMenu();
-      }
-    }
+    //   let time = endTime.getTime() - startTime.getTime()
+
+    //   if (time < 1000){
+    //     this.toggleMenu();
+    //   }
+    // }
     
   }
   pageRight(){
+    var body = (<HTMLIFrameElement>document.getElementById("area").firstChild.firstChild.firstChild).contentWindow.document.querySelectorAll("body")[0];
+
+    console.log(this.getTextElements(body));
+
     this.updateLatestPos();
     rendition.next();
     window.speechSynthesis.cancel()
@@ -165,5 +168,27 @@ export class ReadingPage implements OnInit {
       document.getElementById("menu-container").style.display = "block";
     menuShown = !menuShown;
   }
-  
+  getTextElements(element){
+    let all = element.querySelectorAll("*");
+    let cache = []
+
+    all.forEach((ele:any)=>{
+      if (ele.innerText != undefined && ele.innerText.length > 0){
+        if (this.isInViewport(ele)){
+          cache.push(ele);
+        }
+      }
+    });
+
+    console.log(cache)
+  }
+  isInViewport(element) {
+    const rect = element.getBoundingClientRect();
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
+}
 }
