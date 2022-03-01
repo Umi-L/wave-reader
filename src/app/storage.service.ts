@@ -35,4 +35,11 @@ export class StorageService {
   public async keys(){
     return this._storage.keys();
   }
+
+  public isInitialized(){
+    if (this.storage == undefined){
+      return false;
+    }
+    return true;
+  }
 }

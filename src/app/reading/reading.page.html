@@ -1,8 +1,14 @@
 <ion-content>
   <div id="area" class="epub-container"></div>
+
+  <div class="click-div-left" id="click-left"></div>
+  <div class="click-div-right" id="click-right"></div>
+  <div class="menu-click-div" id="click-menu"></div>
+
 </ion-content>
 
-<div style="opacity: 50%;">
+<div style="opacity: 50%;" id="menu-container">
+
 <ion-fab vertical="bottom" horizontal="end" slot="fixed">
   <ion-fab-button (click)="pageRight()" >
     <ion-icon name="arrow-forward-circle"></ion-icon>

@@ -12,6 +12,8 @@ var delayInterval;
 
 var bookTitle;
 
+var menuShown = true;
+
 @Component({
   selector: 'app-reading',
   templateUrl: './reading.page.html',
@@ -39,9 +41,51 @@ export class ReadingPage implements OnInit {
     var displayed;
     if (data[1] != undefined){
       displayed = rendition.display(data[1]);
+      displayed = rendition.display(data[1]);
+
     }else{
       displayed = rendition.display()
     }
+
+    var startTime;
+
+    document.getElementById("click-left").onmousedown = () =>{
+      startTime = new Date();
+    }
+    document.getElementById("click-right").onmousedown = () =>{
+      startTime = new Date();
+    }
+    document.getElementById("click-menu").onmousedown = () =>{
+      startTime = new Date();
+    }
+    document.getElementById("click-left").onmouseup = () =>{
+      let endTime = new Date();
+
+      let time = endTime.getTime() - startTime.getTime()
+
+      if (time < 1000){
+        this.pageLeft();
+      }
+    }
+    document.getElementById("click-right").onmouseup = () =>{
+      let endTime = new Date();
+
+      let time = endTime.getTime() - startTime.getTime()
+
+      if (time < 1000){
+        this.pageRight();
+      }
+    }
+    document.getElementById("click-menu").onmouseup = () =>{
+      let endTime = new Date();
+
+      let time = endTime.getTime() - startTime.getTime()
+
+      if (time < 1000){
+        this.toggleMenu();
+      }
+    }
+    
   }
   pageRight(){
     this.updateLatestPos();
@@ -113,4 +157,13 @@ export class ReadingPage implements OnInit {
   updateLatestPos(){
     this.storageService.set(bookTitle, rendition.currentLocation().start.cfi);
   }
+
+  toggleMenu(){
+    if (menuShown)
+      document.getElementById("menu-container").style.display = "none";
+    else
+      document.getElementById("menu-container").style.display = "block";
+    menuShown = !menuShown;
+  }
+  
 }

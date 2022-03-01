@@ -21,13 +21,11 @@ export class HomePage {
     private router: Router,
     private dataPassService: DataPassService,
     private storageService: StorageService,
-    private toastCtrl: ToastController,
+    private toastCtrl: ToastController
   ) {}
 
   async ngOnInit() {
-
     await this.storageService.init();
-
 
     acsess_token = await this.storageService.get('access_token');
 
@@ -37,27 +35,38 @@ export class HomePage {
       this.router.navigate(['login']);
     }
 
-    this.loadBooks()
-
-    this.updateBookData()
+    this.loadBooks();
 
     window.speechSynthesis.cancel();
 
     const bookInput = document.getElementById('bookInput');
     bookInput.onchange = async (e) => {
-      let toast = await this.toastCtrl.create({message: "Uploading", "duration":1000, position:"bottom"})
+      let toast = await this.toastCtrl.create({
+        message: 'Uploading',
+        duration: 1000,
+        position: 'bottom',
+      });
       toast.present();
 
-      var resp =  await this.uploadFile((<HTMLInputElement>bookInput).files[0], {"path":"/"+(<HTMLInputElement>bookInput).files[0].name});
-      
-      if (resp.status == 200){
+      var resp = await this.uploadFile((<HTMLInputElement>bookInput).files[0], {
+        path: '/' + (<HTMLInputElement>bookInput).files[0].name,
+      });
+
+      if (resp.status == 200) {
         this.clearBooks();
         this.loadBooks();
-        let toast = await this.toastCtrl.create({message: "book added to library!", "duration":1000, position:"bottom"});
+        let toast = await this.toastCtrl.create({
+          message: 'book added to library!',
+          duration: 1000,
+          position: 'bottom',
+        });
         toast.present();
-      }
-      else{
-        let toast = await this.toastCtrl.create({message: "There has been an error while uploading your book.", "duration":7000, position:"bottom"});
+      } else {
+        let toast = await this.toastCtrl.create({
+          message: 'There has been an error while uploading your book.',
+          duration: 7000,
+          position: 'bottom',
+        });
         toast.present();
       }
     };
@@ -126,33 +135,39 @@ export class HomePage {
     //Cast to a File() type
     return <File>theBlob;
   };
-  async backupBookLocations(){
+  async backupBookLocations() {
     var storageKeys = await this.storageService.keys();
     var re = /(?:\.([^.]+))?$/;
 
-    var tempStorage = {}
+    var tempStorage = {};
 
-    for (var i = 0; i < storageKeys.length; i++){
-      if (re.exec(storageKeys[i])[1] == "epub"){
+    for (var i = 0; i < storageKeys.length; i++) {
+      if (re.exec(storageKeys[i])[1] == 'epub') {
         var keyValue = await this.storageService.get(storageKeys[i]);
 
         tempStorage[storageKeys[i]] = keyValue;
       }
     }
 
-
-    var file = new File([JSON.stringify(tempStorage)], "data.json")
+    var file = new File([JSON.stringify(tempStorage)], 'data.json');
 
     let url = 'https://content.dropboxapi.com/2/files/upload';
-    let response = await this.uploadFile(file, {"path":"/data.json", "autorename": false, mode:{".tag":"overwrite"}});
+    let response = await this.uploadFile(file, {
+      path: '/data.json',
+      autorename: false,
+      mode: { '.tag': 'overwrite' },
+    });
   }
 
-  async makeCard(entry){
+  async makeCard(entry) {
     let card = document.createElement('ion-card');
+    card.setAttribute('class', "card");
     card.button = true;
     card.onclick = async () => {
-      
-      let file = await this.downloadFile({path:entry.path_lower}, entry.name);
+      let file = await this.downloadFile(
+        { path: entry.path_lower },
+        entry.name
+      );
 
       this.openBook(file);
     };
@@ -161,21 +176,16 @@ export class HomePage {
 
     this.getBookImage(entry.path_lower, image);
 
-    image.src = "../assets/book-cover-placeholder.png";
+    image.src = '../assets/book-cover-placeholder.png';
 
     let text = document.createElement('ion-card-title');
     text.innerHTML = entry.name.replace(/\.[^/.]+$/, '');
 
-    let cardHead = card.appendChild(
-      document.createElement('ion-card-header')
-    );
-    let cardBody = card.appendChild(
-      document.createElement('ion-card-content')
-    );
+    let cardHead = card.appendChild(document.createElement('ion-card-header'));
+    let cardBody = card.appendChild(document.createElement('ion-card-content'));
 
     cardBody.appendChild(image);
     cardHead.appendChild(text);
-
 
     card.appendChild(cardHead);
     card.appendChild(cardBody);
@@ -186,8 +196,7 @@ export class HomePage {
     let rows = grid.querySelectorAll('ion-row');
     rows[rows.length - 1].appendChild(card);
   }
-  async getBookImage(path,img){
-
+  async getBookImage(path, img) {
     let headers = {
       method: 'POST',
       headers: {
@@ -213,100 +222,116 @@ export class HomePage {
     img.src = URL.createObjectURL(imageFile);
   }
 
-  uploadFile(file, args){
-    const url = "https://content.dropboxapi.com/2/files/upload"
+  uploadFile(file, args) {
+    const url = 'https://content.dropboxapi.com/2/files/upload';
 
     const fetchOptions = {
       body: file,
       method: 'POST',
       headers: {
-        "Authorization": 'Bearer ' + acsess_token,
+        Authorization: 'Bearer ' + acsess_token,
         'Content-Type': 'application/octet-stream',
         'Dropbox-API-Arg': JSON.stringify(args),
       },
     };
 
-    return fetch(url,fetchOptions).then((response) => {return response});
+    return fetch(url, fetchOptions).then((response) => {
+      return response;
+    });
   }
-  async loadBooks(){
+  async loadBooks() {
     let data = {
       path: '',
       recursive: true,
     };
-  
+
     let url = 'https://api.dropboxapi.com/2/files/list_folder';
     let response = await this.apiCall(url, data);
-  
-  
+
     for (let i = 0; i < response.entries.length; i++) {
       let entry = response.entries[i];
-  
+
       var re = /(?:\.([^.]+))?$/;
-  
-      if (entry[".tag"] == "file" && re.exec(entry.name)[1] == "epub"){
-        this.makeCard(entry)
+
+      if (entry['.tag'] == 'file' && re.exec(entry.name)[1] == 'epub') {
+        this.makeCard(entry);
       }
     }
   }
-  clearBooks(){
+  clearBooks() {
     let windows = document.querySelectorAll('ion-content');
     let grid = windows[windows.length - 1].querySelector('ion-grid');
 
     let rows = grid.querySelectorAll('ion-row');
-    for (var i = 0; i < rows.length; i++){
-      rows[i].innerHTML = "";
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].innerHTML = '';
     }
   }
 
-  async updateBookData(){
-    let data = await this.downloadFile({path:"/data.json"},"data.json");
-    let callback = async (fileData) => {
-      console.log(await fileData)
+  async updateBookData() {
+    if (this.storageService.isInitialized()){
+      console.log("books updated")
+      let data = await this.downloadFile({ path: '/data.json' }, 'data.json');
+      let callback = async (fileData) => {
 
-      let jsonData = JSON.parse(fileData);
+        let jsonData = JSON.parse(fileData);
 
-      let serverKeys = Array.from(jsonData.keys());
-      let clientKeys = await this.storageService.keys();
+        let serverKeys = Array.from(Object.keys(jsonData));
+        let clientKeys = await this.storageService.keys();
 
-      let overlapped = [].concat(serverKeys, clientKeys);
-      let keys = [...new Set(overlapped)]
+        let overlapped = [].concat(serverKeys, clientKeys);
+        let keys = [...new Set(overlapped)];
 
-      var EpubCFI =  new ePub.CFI();
+        var EpubCFI = new ePub.CFI();
 
-      var serverChanged = false;
+        var re = /(?:\.([^.]+))?$/;
 
-      for (const key in keys){
-        console.log(key)
-        let localValue = await this.storageService.get(key);
-        if (localValue != undefined && localValue != null){
-          let highestValue = EpubCFI.compare(localValue, jsonData[key]);
-          if (highestValue == 1){
-            this.storageService.set(key, jsonData[key]);
-          }
-          else if (highestValue == -1){
-            serverChanged = true;
-            jsonData[key] = localValue;
+        var serverChanged = false;
+
+        for (const key in keys) {
+          if (re.exec(keys[key])[1] == 'epub') {
+
+            let localValue = await this.storageService.get(keys[key]);
+            let serverValue = jsonData[keys[key]];
+
+            if (localValue != undefined) {
+              if (serverValue != undefined) {
+
+                let highestValue = EpubCFI.compare(localValue, serverValue);
+                if (highestValue == 1) {
+                  this.storageService.set(keys[key], serverValue);
+                } else if (highestValue == -1) {
+                  serverChanged = true;
+                  jsonData[keys[key]] = localValue;
+                }
+              } else {
+                serverChanged = true;
+                jsonData[keys[key]] = localValue;
+              }
+            } else {
+              this.storageService.set(keys[key], serverValue);
+            }
           }
         }
-        else{
-          this.storageService.set(key, jsonData[key]);
+        if (serverChanged) {
+          console.log(jsonData);
+          var file = new File([JSON.stringify(jsonData)], 'data.json');
+          this.uploadFile(file, {
+            path: '/data.json',
+            autorename: false,
+            mode: { '.tag': 'overwrite' },
+          });
         }
-      }
-      if (serverChanged){
-        var file = new File([JSON.stringify(jsonData)], "data.json")
-        this.uploadFile(file, {"path":"/data.json", "autorename": false, mode:{".tag":"overwrite"}})
-      }
+      };
+      this.readFile(data, callback);
     }
-    this.readFile(data, callback);
-    
-
   }
 
-  async downloadFile(data:object, fileName:string){
+  async downloadFile(data: object, fileName: string) {
     let headers = {
       method: 'POST',
       headers: {
-        "Authorization": 'Bearer ' + acsess_token,
+        Authorization: 'Bearer ' + acsess_token,
         'Content-Type': 'text/plain',
         'Dropbox-API-Arg': JSON.stringify(data),
       },
@@ -320,14 +345,16 @@ export class HomePage {
     let file = new File([fileResponse['result'].fileBlob], fileName);
     return file;
   }
-  readFile(file, callback){
+  readFile(file, callback) {
     let fileReader = new FileReader();
 
-    fileReader.onload = () =>{
-      callback(fileReader.result)
+    fileReader.onload = () => {
+      callback(fileReader.result);
     };
 
     fileReader.readAsText(file);
   }
+  ionViewWillEnter(){
+    this.updateBookData();
+  }
 }
-

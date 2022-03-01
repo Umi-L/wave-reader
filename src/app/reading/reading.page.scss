@@ -35,3 +35,25 @@
     height: 100%;
     width: 100%;
   }
+
+  .click-div-left{
+    position: absolute;
+    top: 0%;
+    height: 100%;
+    width: 20%;
+  }
+  .click-div-right{
+    position: absolute;
+    top: 0%;
+    height: 100%;
+    width: 20%;
+    left:80%
+  }
+
+  .menu-click-div{
+    position: absolute;
+    top: 0%;
+    height: 100%;
+    width: 50%;
+    left:25%
+  }
