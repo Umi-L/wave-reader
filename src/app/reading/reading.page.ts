@@ -14,6 +14,8 @@ var bookTitle;
 
 var menuShown = true;
 
+
+
 @Component({
   selector: 'app-reading',
   templateUrl: './reading.page.html',
@@ -45,10 +47,26 @@ export class ReadingPage implements OnInit {
       displayed = rendition.display()
     }
 
+    
+    const initLoop = setInterval(() =>{
+      try{
+        var doc = (<HTMLIFrameElement>document.getElementById("area").firstChild.firstChild.firstChild).contentWindow.document;
 
+        doc.ondblclick =  (e) => {
+          this.readPageByElements(e.target);
+        };
+
+        clearInterval(initLoop);
+      }
+      catch (e) {
+      }
+
+    }, 300)
+    
+    
     // <---- possibly temporary removal of old navigation system ---->
 
-    // var startTime;
+    //var startTime;
 
     // document.getElementById("click-left").onmousedown = () =>{
     //   startTime = new Date();
@@ -86,7 +104,6 @@ export class ReadingPage implements OnInit {
     //     this.toggleMenu();
     //   }
     // }
-    
   }
   pageRight(){
     this.updateLatestPos();
@@ -115,6 +132,8 @@ export class ReadingPage implements OnInit {
       window.speechSynthesis.speak(to_speak);
     }
   }
+
+  
 
   // <----- depricated old reading system ----->
 
@@ -154,7 +173,7 @@ export class ReadingPage implements OnInit {
   //   }
   // }
 
-  readPageByElements(){
+  readPageByElements(startElement = undefined){
     let body = (<HTMLIFrameElement>document.getElementById("area").firstChild.firstChild.firstChild).contentWindow.document.querySelectorAll("body")[0];
 
     if (delayInterval != undefined){
@@ -167,6 +186,17 @@ export class ReadingPage implements OnInit {
     }
 
     let lines = this.getTextElements(body);
+
+    if (startElement != undefined){
+      if (lines.includes(startElement)){
+        const index = lines.indexOf(startElement);
+        lines = lines.slice(index);
+      }
+      else{
+        console.log("not found")
+        return
+      }
+    }
 
     lines.forEach((item, i) => {
       this.readTTS(item.innerText,()=>{
@@ -214,7 +244,7 @@ export class ReadingPage implements OnInit {
     all.forEach((ele:any)=>{
       if (ele.innerText != undefined && ele.innerText.length > 0){
         if (this.isInViewport(ele)){
-          if (!cache.includes(ele.parentElement)){
+          if (!cache.includes(ele.parentElement) && ele.parentElement.children.length > 5){
             cache.push(ele);
           }
         }

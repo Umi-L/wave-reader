@@ -355,6 +355,8 @@ export class HomePage {
     fileReader.readAsText(file);
   }
   ionViewWillEnter(){
+    window.speechSynthesis.cancel();
+
     this.updateBookData();
   }
 }
