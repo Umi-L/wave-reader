@@ -1,0 +1,28 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>settings</ion-title>
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-card>
+    <ion-card-header>
+      <h1>
+        Text to speech
+      </h1>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <h2>Rate</h2>
+        <ion-range min="1" max="10" pin="true" snaps="true" id="rate" (ionChange)="rateChange()"></ion-range>
+        <h2>pitch</h2>
+        <ion-range min="1" max="10" pin="true" snaps="true" id="pitch"></ion-range>
+        <h2>volume</h2>
+        <ion-range min="1" max="10" pin="true" snaps="true" id="volume"></ion-range>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

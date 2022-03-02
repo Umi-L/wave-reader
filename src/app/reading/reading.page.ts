@@ -3,6 +3,7 @@ import {DataPassService} from '../data-pass.service';
 import {Router} from '@angular/router'
 import { interval } from 'rxjs';
 import{StorageService} from '../storage.service'
+import{SettingsService} from '../settings.service'
 
 
 declare var ePub: any;
@@ -23,7 +24,7 @@ var menuShown = true;
 })
 export class ReadingPage implements OnInit {
 
-  constructor(private router:Router, private dataPassService: DataPassService, private storageService:StorageService) { }
+  constructor(private router:Router, private dataPassService: DataPassService, private storageService:StorageService, private settings:SettingsService) { }
   
   ngOnInit(){
 
@@ -120,6 +121,12 @@ export class ReadingPage implements OnInit {
   readTTS(line:string, start = undefined, end = undefined){
     if ('speechSynthesis' in window) {
       var to_speak = new SpeechSynthesisUtterance(line);
+      to_speak.rate = this.settings.get("ttsRate");
+      to_speak.pitch = this.settings.get("ttsPitch");
+      to_speak.volume = this.settings.get("ttsVolume");
+
+      console.log(this.settings.get("ttsRate"));
+
 
       if (end != undefined){
         to_speak.onend = end;
@@ -244,8 +251,10 @@ export class ReadingPage implements OnInit {
     all.forEach((ele:any)=>{
       if (ele.innerText != undefined && ele.innerText.length > 0){
         if (this.isInViewport(ele)){
-          if (!cache.includes(ele.parentElement) && ele.parentElement.children.length > 5){
-            cache.push(ele);
+          if (ele.querySelectorAll("*").length < 5){
+            if (!cache.includes(ele.parentElement)){
+              cache.push(ele);
+            }
           }
         }
       }

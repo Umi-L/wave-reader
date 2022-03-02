@@ -6,9 +6,11 @@ import { Router } from '@angular/router';
 import { StorageService } from '../storage.service';
 import { element } from 'protractor';
 import { ToastController } from '@ionic/angular';
+import { DropboxService } from '../dropbox.service';
+import { access } from 'fs';
 
 var isApp: boolean;
-var acsess_token;
+var access_token;
 declare var ePub: any;
 
 @Component({
@@ -21,19 +23,22 @@ export class HomePage {
     private router: Router,
     private dataPassService: DataPassService,
     private storageService: StorageService,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private dropboxService: DropboxService
   ) {}
 
   async ngOnInit() {
     await this.storageService.init();
 
-    acsess_token = await this.storageService.get('access_token');
+    access_token = await this.storageService.get('access_token');
 
-    console.log(acsess_token);
+    console.log(access_token);
 
-    if (acsess_token == null || acsess_token == undefined) {
+    if (access_token == null || access_token == undefined) {
       this.router.navigate(['login']);
     }
+
+    
 
     this.loadBooks();
 
@@ -48,9 +53,9 @@ export class HomePage {
       });
       toast.present();
 
-      var resp = await this.uploadFile((<HTMLInputElement>bookInput).files[0], {
+      var resp = await this.dropboxService.uploadFile((<HTMLInputElement>bookInput).files[0], {
         path: '/' + (<HTMLInputElement>bookInput).files[0].name,
-      });
+      }, access_token);
 
       if (resp.status == 200) {
         this.clearBooks();
@@ -90,28 +95,6 @@ export class HomePage {
     this.router.navigate(['reading']);
   }
 
-  async apiCall(url: string, jsonData, headers = undefined, returnJson = true) {
-    if (headers == undefined) {
-      headers = {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer ' + acsess_token,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jsonData),
-      };
-    }
-    let data = await fetch(url, headers).then((response) => {
-      if (response.status == 401) {
-        this.router.navigate(['login']);
-      }
-      if (returnJson) {
-        return response.json();
-      }
-      return response;
-    });
-    return data;
-  }
   parseDownloadResponse(res) {
     if (!res.ok) {
       return 1;
@@ -152,11 +135,11 @@ export class HomePage {
     var file = new File([JSON.stringify(tempStorage)], 'data.json');
 
     let url = 'https://content.dropboxapi.com/2/files/upload';
-    let response = await this.uploadFile(file, {
+    let response = await this.dropboxService.uploadFile(file, {
       path: '/data.json',
       autorename: false,
       mode: { '.tag': 'overwrite' },
-    });
+    }, access_token);
   }
 
   async makeCard(entry) {
@@ -164,9 +147,10 @@ export class HomePage {
     card.setAttribute('class', "card");
     card.button = true;
     card.onclick = async () => {
-      let file = await this.downloadFile(
+      let file = await this.dropboxService.downloadFile(
         { path: entry.path_lower },
-        entry.name
+        entry.name,
+        access_token
       );
 
       this.openBook(file);
@@ -200,7 +184,7 @@ export class HomePage {
     let headers = {
       method: 'POST',
       headers: {
-        Authorization: 'Bearer ' + acsess_token,
+        Authorization: 'Bearer ' + access_token,
         'Content-Type': 'text/plain',
         'Dropbox-API-Arg': JSON.stringify({
           path: path,
@@ -210,7 +194,7 @@ export class HomePage {
     };
 
     let url = 'https://content.dropboxapi.com/2/files/get_thumbnail';
-    let imageResponse = await this.apiCall(url, null, headers, false);
+    let imageResponse = await this.dropboxService.apiCall(url, null, headers, false, access_token);
 
     let imageFileResponse = await this.parseDownloadResponse(imageResponse);
 
@@ -221,24 +205,7 @@ export class HomePage {
 
     img.src = URL.createObjectURL(imageFile);
   }
-
-  uploadFile(file, args) {
-    const url = 'https://content.dropboxapi.com/2/files/upload';
-
-    const fetchOptions = {
-      body: file,
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + acsess_token,
-        'Content-Type': 'application/octet-stream',
-        'Dropbox-API-Arg': JSON.stringify(args),
-      },
-    };
-
-    return fetch(url, fetchOptions).then((response) => {
-      return response;
-    });
-  }
+  
   async loadBooks() {
     let data = {
       path: '',
@@ -246,7 +213,7 @@ export class HomePage {
     };
 
     let url = 'https://api.dropboxapi.com/2/files/list_folder';
-    let response = await this.apiCall(url, data);
+    let response = await this.dropboxService.apiCall(url, data, undefined, undefined, access_token);
 
     for (let i = 0; i < response.entries.length; i++) {
       let entry = response.entries[i];
@@ -271,7 +238,7 @@ export class HomePage {
   async updateBookData() {
     if (this.storageService.isInitialized()){
       console.log("books updated")
-      let data = await this.downloadFile({ path: '/data.json' }, 'data.json');
+      let data = await this.dropboxService.downloadFile({ path: '/data.json' }, 'data.json', access_token);
       let callback = async (fileData) => {
 
         let jsonData = JSON.parse(fileData);
@@ -316,35 +283,18 @@ export class HomePage {
         if (serverChanged) {
           console.log(jsonData);
           var file = new File([JSON.stringify(jsonData)], 'data.json');
-          this.uploadFile(file, {
+          this.dropboxService.uploadFile(file, {
             path: '/data.json',
             autorename: false,
             mode: { '.tag': 'overwrite' },
-          });
+          }, access_token);
         }
       };
       this.readFile(data, callback);
     }
   }
 
-  async downloadFile(data: object, fileName: string) {
-    let headers = {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + acsess_token,
-        'Content-Type': 'text/plain',
-        'Dropbox-API-Arg': JSON.stringify(data),
-      },
-    };
-
-    let url = 'https://content.dropboxapi.com/2/files/download';
-    let response = await this.apiCall(url, null, headers, false);
-
-    let fileResponse = await this.parseDownloadResponse(response);
-
-    let file = new File([fileResponse['result'].fileBlob], fileName);
-    return file;
-  }
+  
   readFile(file, callback) {
     let fileReader = new FileReader();
 
@@ -358,5 +308,8 @@ export class HomePage {
     window.speechSynthesis.cancel();
 
     this.updateBookData();
+  }
+  settingsPage(){
+    this.router.navigate(['settings']);
   }
 }
