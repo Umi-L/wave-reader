@@ -1,13 +1,10 @@
 import { Component } from '@angular/core';
-import { MenuController } from '@ionic/angular';
-import { timeStamp } from 'console';
 import { DataPassService } from '../data-pass.service';
 import { Router } from '@angular/router';
 import { StorageService } from '../storage.service';
-import { element } from 'protractor';
 import { ToastController } from '@ionic/angular';
 import { DropboxService } from '../dropbox.service';
-import { access } from 'fs';
+import { SettingsService } from '../settings.service';
 
 var isApp: boolean;
 var access_token;
@@ -24,10 +21,14 @@ export class HomePage {
     private dataPassService: DataPassService,
     private storageService: StorageService,
     private toastCtrl: ToastController,
-    private dropboxService: DropboxService
+    private dropboxService: DropboxService,
+    private settingsService:SettingsService
   ) {}
 
   async ngOnInit() {
+
+    this.settingsService.init();
+
     await this.storageService.init();
 
     access_token = await this.storageService.get('access_token');

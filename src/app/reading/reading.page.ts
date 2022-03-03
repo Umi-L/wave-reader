@@ -118,14 +118,14 @@ export class ReadingPage implements OnInit {
     window.speechSynthesis.cancel()
   }
 
-  readTTS(line:string, start = undefined, end = undefined){
+  async readTTS(line:string, start = undefined, end = undefined){
     if ('speechSynthesis' in window) {
       var to_speak = new SpeechSynthesisUtterance(line);
-      to_speak.rate = this.settings.get("ttsRate");
-      to_speak.pitch = this.settings.get("ttsPitch");
-      to_speak.volume = this.settings.get("ttsVolume");
+      to_speak.rate = await this.settings.get("ttsRate");
+      to_speak.pitch = await this.settings.get("ttsPitch");
+      to_speak.volume = await this.settings.get("ttsVolume");
 
-      console.log(this.settings.get("ttsRate"));
+      console.log(await this.settings.get("ttsRate"));
 
 
       if (end != undefined){

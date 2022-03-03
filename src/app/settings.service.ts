@@ -9,7 +9,10 @@ import { StorageService } from './storage.service';
 export class SettingsService {
   _settings;
   constructor(private storageService:StorageService) { 
-    let value = this.storageService.get("settings");
+    this.init();
+  }
+  public async init(){
+    let value = await this.storageService.get("settings");
     if (value == undefined){
       this._settings = {
         ttsRate: 1,
@@ -20,9 +23,10 @@ export class SettingsService {
     else{
       this._settings = value;
     }
+    console.log("settings initialized")
   }
 
-  get(key?:string){
+  async get(key?:string){
     if (key != undefined){
       return this._settings[key];
     }
@@ -32,5 +36,8 @@ export class SettingsService {
   set(key:string, value:any){
     this._settings[key] = value;
     this.storageService.set("settings",this._settings);
+
+    console.log(this._settings[key]);
+    
   }
 }
