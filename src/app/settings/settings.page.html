@@ -16,12 +16,12 @@
     </ion-card-header>
     <ion-card-content>
       <ion-list>
-        <h2>Rate</h2>
-        <ion-range min="1" max="10" pin="true" snaps="true" id="rate" (ionChange)="rateChange()"></ion-range>
-        <h2>pitch</h2>
-        <ion-range min="1" max="10" pin="true" snaps="true" id="pitch"></ion-range>
-        <h2>volume</h2>
-        <ion-range min="1" max="10" pin="true" snaps="true" id="volume"></ion-range>
+        <h2>Rate <i id="rateTag">1.2</i></h2>
+        <ion-range min="0.1" max="5"  id="rate" step="0.1" (ionChange)="rateChange()"></ion-range>
+        <h2>pitch <i id="pitchTag">1.2</i></h2>
+        <ion-range min="0.1" max="10"  id="pitch" step="0.1" (ionChange)="pitchChange()"></ion-range>
+        <h2>volume <i id="volumeTag">1.2</i></h2>
+        <ion-range min="0.1" max="10"  id="volume" step="0.1" (ionChange)="volumeChange()"></ion-range>
       </ion-list>
     </ion-card-content>
   </ion-card>

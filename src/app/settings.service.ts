@@ -7,11 +7,14 @@ import { StorageService } from './storage.service';
 })
 
 export class SettingsService {
-  _settings;
+  public _settings: Object | null = null;
+
   constructor(private storageService:StorageService) { 
     this.init();
   }
   public async init(){
+    await this.storageService.init()
+
     let value = await this.storageService.get("settings");
     if (value == undefined){
       this._settings = {
@@ -23,21 +26,17 @@ export class SettingsService {
     else{
       this._settings = value;
     }
-    console.log("settings initialized")
   }
 
-  async get(key?:string){
+  public get(key?:string){
     if (key != undefined){
       return this._settings[key];
     }
     return this._settings;
   }
 
-  set(key:string, value:any){
+  public async set(key:string, value:any){
     this._settings[key] = value;
-    this.storageService.set("settings",this._settings);
-
-    console.log(this._settings[key]);
-    
+    await this.storageService.set("settings",this._settings);    
   }
 }

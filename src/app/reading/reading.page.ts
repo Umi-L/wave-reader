@@ -121,11 +121,9 @@ export class ReadingPage implements OnInit {
   async readTTS(line:string, start = undefined, end = undefined){
     if ('speechSynthesis' in window) {
       var to_speak = new SpeechSynthesisUtterance(line);
-      to_speak.rate = await this.settings.get("ttsRate");
-      to_speak.pitch = await this.settings.get("ttsPitch");
-      to_speak.volume = await this.settings.get("ttsVolume");
-
-      console.log(await this.settings.get("ttsRate"));
+      to_speak.rate = this.settings.get("ttsRate");
+      to_speak.pitch = this.settings.get("ttsPitch");
+      to_speak.volume = this.settings.get("ttsVolume");
 
 
       if (end != undefined){
@@ -198,6 +196,8 @@ export class ReadingPage implements OnInit {
       if (lines.includes(startElement)){
         const index = lines.indexOf(startElement);
         lines = lines.slice(index);
+
+        window.speechSynthesis.cancel();
       }
       else{
         console.log("not found")
@@ -207,7 +207,6 @@ export class ReadingPage implements OnInit {
 
     lines.forEach((item, i) => {
       this.readTTS(item.innerText,()=>{
-        console.log(item.innerText)
         item.style.backgroundColor = "#965300";
       },
       ()=>{

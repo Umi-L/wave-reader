@@ -27,7 +27,6 @@ export class HomePage {
 
   async ngOnInit() {
 
-    this.settingsService.init();
 
     await this.storageService.init();
 
