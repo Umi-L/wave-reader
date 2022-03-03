@@ -11,6 +11,27 @@
   <ion-card>
     <ion-card-header>
       <h1>
+        General
+      </h1>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-radio-group value="dark" id="displayMode" (ionChange)="displayModeChange()">
+          <ion-item>
+            <ion-label>Light Mode</ion-label>
+            <ion-radio slot="end" value="light"></ion-radio>
+          </ion-item>
+          <ion-item>
+            <ion-label>Dark Mode</ion-label>
+            <ion-radio slot="end" value="dark"></ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+  <ion-card>
+    <ion-card-header>
+      <h1>
         Text to speech
       </h1>
     </ion-card-header>
@@ -18,10 +39,13 @@
       <ion-list>
         <h2>Rate <i id="rateTag">1.2</i></h2>
         <ion-range min="0.1" max="5"  id="rate" step="0.1" (ionChange)="rateChange()"></ion-range>
-        <h2>pitch <i id="pitchTag">1.2</i></h2>
+        <h2>Pitch <i id="pitchTag">1.2</i></h2>
         <ion-range min="0.1" max="10"  id="pitch" step="0.1" (ionChange)="pitchChange()"></ion-range>
-        <h2>volume <i id="volumeTag">1.2</i></h2>
+        <h2>Volume <i id="volumeTag">1.2</i></h2>
         <ion-range min="0.1" max="10"  id="volume" step="0.1" (ionChange)="volumeChange()"></ion-range>
+
+        <h2>Voice</h2>
+        <ion-select id="voiceSelector" placeholder="Default" (ionChange)="voiceChange()"></ion-select>
       </ion-list>
     </ion-card-content>
   </ion-card>

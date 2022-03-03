@@ -27,8 +27,11 @@ export class HomePage {
 
   async ngOnInit() {
 
-
     await this.storageService.init();
+    await this.settingsService.init();
+
+    let displayMode = this.settingsService.get("displayMode");
+    document.body.setAttribute("color-theme", displayMode);
 
     access_token = await this.storageService.get('access_token');
 

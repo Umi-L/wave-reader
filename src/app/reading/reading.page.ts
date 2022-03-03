@@ -28,6 +28,8 @@ export class ReadingPage implements OnInit {
   
   ngOnInit(){
 
+    this.settings.init();
+
     let data = this.dataPassService.getData();
 
     bookTitle = data[2];
@@ -39,7 +41,15 @@ export class ReadingPage implements OnInit {
     var book = ePub(data[0]);
 
     rendition = book.renderTo("area", { method: "default", width: "100%", height: "100%", allowScriptedContent: false, spread: false });
-    rendition.themes.default("../assets/fontSheet.css")
+
+
+    
+    if (this.settings.get("displayMode") == "dark"){
+      rendition.themes.default("../assets/bookStyles/darkSheet.css")
+    }
+    else{
+      rendition.themes.default("../assets/bookStyles/lightSheet.css")
+    }
     
     var displayed;
     if (data[1] != undefined){
@@ -125,6 +135,15 @@ export class ReadingPage implements OnInit {
       to_speak.pitch = this.settings.get("ttsPitch");
       to_speak.volume = this.settings.get("ttsVolume");
 
+      let voiceName = this.settings.get("ttsVoice");
+      if (voiceName != undefined) {
+        speechSynthesis.getVoices().forEach((voice) => {
+          if (voice.name == voiceName) {
+            to_speak.voice = voice;
+          }
+        })
+      }
+
 
       if (end != undefined){
         to_speak.onend = end;
@@ -205,6 +224,14 @@ export class ReadingPage implements OnInit {
       }
     }
 
+    if (lines.length == 0){
+      rendition.next()
+      delayInterval = setInterval(() => {      
+        this.updateLatestPos();
+        this.readPageByElements(); 
+      }, 100);
+    }
+
     lines.forEach((item, i) => {
       this.readTTS(item.innerText,()=>{
         item.style.backgroundColor = "#965300";
@@ -227,8 +254,13 @@ export class ReadingPage implements OnInit {
     if (!window.speechSynthesis.speaking){
       this.readPageByElements();
     }
+    
     else{
-      window.speechSynthesis.cancel();
+      if (speechSynthesis.paused){
+        speechSynthesis.resume();
+      }else{
+        window.speechSynthesis.pause();
+      }
     }
   }
 
