@@ -29,7 +29,7 @@ export class ReadingPage implements OnInit {
   
   async ngOnInit(){
 
-    this.settings.init();
+    await this.settings.init();
 
     let data = this.dataPassService.getData();
 
@@ -73,6 +73,7 @@ export class ReadingPage implements OnInit {
         doc.ondblclick =  (e) => {
           this.readPageByElements(e.target);
         };
+
 
         clearInterval(initLoop);
       }

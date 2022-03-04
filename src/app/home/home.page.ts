@@ -150,11 +150,20 @@ export class HomePage {
     card.setAttribute('class', "card");
     card.button = true;
     card.onclick = async () => {
+
+      let toast = await this.toastCtrl.create({
+        message: 'Loading',
+        position: 'bottom',
+      });
+      toast.present();
+
       let file = await this.dropboxService.downloadFile(
         { path: entry.path_lower },
         entry.name,
         access_token
       );
+
+      toast.dismiss();
 
       this.openBook(file);
     };
@@ -218,8 +227,12 @@ export class HomePage {
     let url = 'https://api.dropboxapi.com/2/files/list_folder';
     let response = await this.dropboxService.apiCall(url, data, undefined, undefined, access_token);
 
-    for (let i = 0; i < response.entries.length; i++) {
-      let entry = response.entries[i];
+    let sorted = this.sortBooks(response.entries, "name");
+
+    console.log(sorted)
+
+    for (let i = 0; i < sorted.length; i++) {
+      let entry = sorted[i];
 
       var re = /(?:\.([^.]+))?$/;
 
@@ -315,5 +328,21 @@ export class HomePage {
   }
   settingsPage(){
     this.router.navigate(['settings']);
+  }
+  reloadButton(){
+    this.clearBooks();
+    this.loadBooks();
+  }
+  sortBooks(books, sortMethod){
+    if(sortMethod == "date"){
+      return books;
+    }
+    if (sortMethod == "name"){
+      let result = books.map(a => a.name);
+
+      
+
+      return result.sort()
+    }
   }
 }

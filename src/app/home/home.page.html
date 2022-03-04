@@ -4,12 +4,16 @@
     <h2 style="margin: 10px;">Home</h2>
     <ion-buttons slot="end">
       <!-- <button (click)="clearStorage()">clearStorage</button> -->
+      <ion-button (click)="reloadButton()">
+        <ion-icon name="reload-outline"></ion-icon>      
+      </ion-button>
       <ion-button (click)="settingsPage()">
         <ion-icon name="settings-outline"></ion-icon>
       </ion-button>
       <ion-button (click)="f.click()">
         <ion-icon name="add"></ion-icon>
       </ion-button>
+      
     </ion-buttons>
     </ion-toolbar>
     <input type="file" #f id="bookInput" accept=".epub" class="flex-ceter" style="display: none;">
