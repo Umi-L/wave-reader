@@ -94,7 +94,7 @@ export class HomePage {
     if (response != undefined) {
       location = response;
     }
-    this.dataPassService.setData([file, location, bookTitle]);
+    this.dataPassService.setData([file, bookTitle]);
     this.router.navigate(['reading']);
   }
 
@@ -268,13 +268,14 @@ export class HomePage {
               if (serverValue != undefined) {
 
                 let highestValue = EpubCFI.compare(localValue, serverValue);
-                if (highestValue == 1) {
+                if (highestValue == -1) {
                   this.storageService.set(keys[key], serverValue);
-                } else if (highestValue == -1) {
+                } else if (highestValue == 1) {
                   serverChanged = true;
                   jsonData[keys[key]] = localValue;
                 }
-              } else {
+              } 
+              else {
                 serverChanged = true;
                 jsonData[keys[key]] = localValue;
               }

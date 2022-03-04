@@ -4,6 +4,7 @@ import {Router} from '@angular/router'
 import { interval } from 'rxjs';
 import{StorageService} from '../storage.service'
 import{SettingsService} from '../settings.service'
+import { EpubCFI } from 'src/assets/epubjs/types';
 
 
 declare var ePub: any;
@@ -26,13 +27,13 @@ export class ReadingPage implements OnInit {
 
   constructor(private router:Router, private dataPassService: DataPassService, private storageService:StorageService, private settings:SettingsService) { }
   
-  ngOnInit(){
+  async ngOnInit(){
 
     this.settings.init();
 
     let data = this.dataPassService.getData();
 
-    bookTitle = data[2];
+    bookTitle = data[1];
 
     if (data == 0)
       this.router.navigateByUrl('/home', { replaceUrl: true }) ;
@@ -50,10 +51,16 @@ export class ReadingPage implements OnInit {
     else{
       rendition.themes.default("../assets/bookStyles/lightSheet.css")
     }
-    
+
+    console.log(bookTitle)
+
+    let latestCfi = await this.storageService.get(bookTitle);
+
     var displayed;
-    if (data[1] != undefined){
-      displayed = rendition.display(data[1]);
+    if (latestCfi != undefined){
+      console.log(latestCfi);
+      displayed = rendition.display(latestCfi);
+
     }else{
       displayed = rendition.display()
     }
@@ -234,7 +241,12 @@ export class ReadingPage implements OnInit {
 
     lines.forEach((item, i) => {
       this.readTTS(item.innerText,()=>{
-        item.style.backgroundColor = "#965300";
+        if (this.settings.get("displayMode") == "dark"){
+          item.style.backgroundColor = "#965300";
+        }
+        else if(this.settings.get("displayMode") == "light"){
+          item.style.backgroundColor = "#F18500";
+        }
       },
       ()=>{
         item.style.backgroundColor = ""
@@ -264,8 +276,15 @@ export class ReadingPage implements OnInit {
     }
   }
 
-  updateLatestPos(){
-    this.storageService.set(bookTitle, rendition.currentLocation().start.cfi);
+  async updateLatestPos(){
+    console.log("---------")
+
+
+    console.log(rendition.currentLocation().start.cfi.toString())
+
+    await this.storageService.set(bookTitle, rendition.currentLocation().start.cfi.toString());
+
+    console.log(await this.storageService.get(bookTitle))
   }
 
   toggleMenu(){
