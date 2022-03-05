@@ -4,6 +4,35 @@
     <h2 style="margin: 10px;">Home</h2>
     <ion-buttons slot="end">
       <!-- <button (click)="clearStorage()">clearStorage</button> -->
+      <ion-button id="trigger-button">
+        <ion-icon name="filter-outline"></ion-icon>
+      </ion-button>
+      <ion-popover trigger="trigger-button" (willPresent)="popoverPresent()" (ionPopoverDidDismiss)="popoverDismiss()" id="filterPopover">
+        <ng-template>
+          <ion-content>
+            <ion-card>
+              <ion-card-header>
+                Filter
+              </ion-card-header>
+              <ion-card-content>
+                <ion-list>
+                  <ion-radio-group id="filterGroup" (ionChange)="filterModeChange()">
+                    <ion-item>
+                      <ion-label>Date Added</ion-label>
+                      <ion-radio value="date"></ion-radio>
+                    </ion-item>
+                
+                    <ion-item>
+                      <ion-label>Name</ion-label>
+                      <ion-radio value="name"></ion-radio>
+                    </ion-item>
+                  </ion-radio-group>
+                </ion-list>
+              </ion-card-content>
+            </ion-card>
+          </ion-content>
+        </ng-template>
+      </ion-popover>
       <ion-button (click)="reloadButton()">
         <ion-icon name="reload-outline"></ion-icon>      
       </ion-button>

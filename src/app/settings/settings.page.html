@@ -29,6 +29,9 @@
       </ion-list>
     </ion-card-content>
   </ion-card>
+
+
+
   <ion-card>
     <ion-card-header>
       <h1>
@@ -49,4 +52,17 @@
       </ion-list>
     </ion-card-content>
   </ion-card>
+
+
+  <ion-card>
+    <ion-card-header>
+      <h1>
+        Advanced
+      </h1>
+    </ion-card-header>
+    <ion-card-content>
+      <h2>Allow embeded scripts <b><u>(allows for possible security vulnerabilities in untrusted ebooks.)</u></b></h2>
+      <ion-toggle id="scriptedContentToggle" (ionChange)="scriptedContentChange()"></ion-toggle>
+    </ion-card-content>
+  </ion-card>  
 </ion-content>

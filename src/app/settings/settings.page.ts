@@ -17,10 +17,14 @@ export class SettingsPage implements OnInit {
     let pitch = this.settingsService.get("ttsPitch");
     let volume = this.settingsService.get("ttsVolume");
     let displayMode = this.settingsService.get("displayMode");
+    let scriptedContent = this.settingsService.get("scriptedContent");
+
+    console.log(scriptedContent);
 
     (<any>document.getElementById("rate")).value = rate;
     (<any>document.getElementById("pitch")).value = pitch;
     (<any>document.getElementById("volume")).value = volume;
+    (<any>document.getElementById("scriptedContentToggle")).checked = scriptedContent;
 
     document.getElementById("rateTag").innerHTML = rate;
     document.getElementById("pitchTag").innerHTML = pitch;
@@ -88,5 +92,12 @@ export class SettingsPage implements OnInit {
       document.body.setAttribute("color-theme", value)
       this.settingsService.set("displayMode", value)
     }
+  }
+  scriptedContentChange(){
+    let value = (<any>document.getElementById("scriptedContentToggle")).checked
+
+    this.settingsService.set("scriptedContent", value);
+
+    console.log(value)
   }
 }

@@ -32,6 +32,7 @@ export class HomePage {
 
     let displayMode = this.settingsService.get("displayMode");
     document.body.setAttribute("color-theme", displayMode);
+      
 
     access_token = await this.storageService.get('access_token');
 
@@ -227,9 +228,9 @@ export class HomePage {
     let url = 'https://api.dropboxapi.com/2/files/list_folder';
     let response = await this.dropboxService.apiCall(url, data, undefined, undefined, access_token);
 
-    let sorted = this.sortBooks(response.entries, "name");
+    let filterMode = await this.settingsService.get("filterMode");
 
-    console.log(sorted)
+    let sorted = this.sortBooks(response.entries, filterMode);
 
     for (let i = 0; i < sorted.length; i++) {
       let entry = sorted[i];
@@ -338,11 +339,47 @@ export class HomePage {
       return books;
     }
     if (sortMethod == "name"){
-      let result = books.map(a => a.name);
+      let names = books.map(a => a.name);
+      names = names.sort()
 
-      
+      let sortedEnteries = []
 
-      return result.sort()
+      for (var j = 0; j < names.length; j++) {
+        for (var i = 0; i < books.length; i++){
+          if (books[i].name == names[j]){
+            sortedEnteries.push(books[i]);
+          }
+        }
+      }
+
+      return sortedEnteries;
     }
+  }
+  filterModeChange(){
+
+    let popover = document.getElementById("filterPopover");
+
+    let value = (<any>popover.querySelector("ion-radio-group")).value;
+
+    this.settingsService.set("filterMode", value);
+  }
+
+  async popoverPresent(){
+    let popover = document.getElementById("filterPopover");
+
+    let savedValue = await this.settingsService.get("filterMode");
+
+    (<any>popover.querySelector("ion-radio-group")).value = savedValue;
+  }
+  popoverDismiss(){
+    const dismiss = setInterval(() => {
+      try{
+        this.clearBooks()
+        this.loadBooks()
+        clearInterval(dismiss)
+      }
+      catch(e){
+      }
+    },400)
   }
 }

@@ -21,7 +21,9 @@ export class SettingsService {
         ttsRate: 1,
         ttsPitch: 1,
         ttsVolume: 1,
-        displayMode: "dark"
+        displayMode: "dark",
+        filterMode: "date",
+        scriptedContent: false,
       } 
     }
     else{

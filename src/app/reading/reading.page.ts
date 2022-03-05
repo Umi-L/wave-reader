@@ -41,7 +41,9 @@ export class ReadingPage implements OnInit {
 
     var book = ePub(data[0]);
 
-    rendition = book.renderTo("area", { method: "default", width: "100%", height: "100%", allowScriptedContent: false, spread: false });
+    let allowScripts = await this.settings.get("scriptedContent");
+
+    rendition = book.renderTo("area", { method: "default", width: "100%", height: "100%", allowScriptedContent: allowScripts, spread: false });
 
 
     
@@ -58,29 +60,43 @@ export class ReadingPage implements OnInit {
 
     var displayed;
     if (latestCfi != undefined){
-      console.log(latestCfi);
       displayed = rendition.display(latestCfi);
+
+      var started = false;
+
+      rendition.on("rendered", () =>{
+        setTimeout(() =>{
+          if (!started){
+            rendition.display(latestCfi);
+            console.log("2nd")
+            started = true;
+          }
+        },100)
+      })
 
     }else{
       displayed = rendition.display()
     }
 
-    
-    const initLoop = setInterval(() =>{
-      try{
-        var doc = (<HTMLIFrameElement>document.getElementById("area").firstChild.firstChild.firstChild).contentWindow.document;
+    var resizeTimer;
+    window.onresize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout( async () =>{
+        try{
+          let latestCfi = rendition.currentLocation().start.cfi
+        }
+        catch(e){
+          let latestCfi = this.storageService.get(bookTitle);
+        }
 
-        doc.ondblclick =  (e) => {
-          this.readPageByElements(e.target);
-        };
+        rendition.display(latestCfi);
 
+        this.startInitLoop();
 
-        clearInterval(initLoop);
-      }
-      catch (e) {
-      }
+      }, 100)
+    }
 
-    }, 300)
+    this.startInitLoop();
     
     
     // <---- possibly temporary removal of old navigation system ---->
@@ -124,15 +140,45 @@ export class ReadingPage implements OnInit {
     //   }
     // }
   }
+  startInitLoop(){
+    const initLoop = setInterval(() =>{
+      try{
+        var doc = (<HTMLIFrameElement>document.getElementById("area").firstChild.firstChild.firstChild).contentWindow.document;
+        console.log("passedError")
+
+        doc.ondblclick =  (e) => {
+          console.log("dbClickRegistered")
+          this.readPageByElements(e.target);
+        };
+
+
+        clearInterval(initLoop);
+      }
+      catch (e) {
+        console.log("ahhhhhhhhh")
+      }
+
+    }, 300)
+  }
+
   pageRight(){
-    this.updateLatestPos();
     rendition.next();
+
+    setTimeout(() =>{
+      this.updateLatestPos();
+    }, 1000)
+
     window.speechSynthesis.cancel()
     
   }
   pageLeft(){
-    this.updateLatestPos();
+    
     rendition.prev()
+
+    setTimeout(() =>{
+      this.updateLatestPos();
+    }, 1000)
+
     window.speechSynthesis.cancel()
   }
 
@@ -164,46 +210,6 @@ export class ReadingPage implements OnInit {
       window.speechSynthesis.speak(to_speak);
     }
   }
-
-  
-
-  // <----- depricated old reading system ----->
-
-
-  // getLinesOnPage(){
-  //   var range = rendition.getRange(rendition.currentLocation().start.cfi);
-  //   var endRange = rendition.getRange(rendition.currentLocation().end.cfi);
-  //   range.setEnd(endRange.startContainer, endRange.startOffset);
-    
-  //   var lines = range.toString().split("\n");
-  //   return lines;
-  // }
-
-
-  // readPage(){
-  //   if (delayInterval != undefined){
-  //     if (rendition.currentLocation().start != undefined){
-  //       clearInterval(delayInterval);
-  //       delayInterval = undefined;
-  //     }else{
-  //       return
-  //     }
-  //   }
-  //   let lines = this.getLinesOnPage();
-  //   for (var i = 0; i < lines.length; i++){
-  //     if (i + 1 == lines.length){
-  //       this.readTTS(lines[i], undefined,() => {
-  //         rendition.next()
-  //         delayInterval = setInterval(() => {      
-  //           this.updateLatestPos();
-  //           this.readPage(); 
-  //         }, 100);
-          
-  //       });
-  //     }else
-  //       this.readTTS(lines[i]);
-  //   }
-  // }
 
   readPageByElements(startElement = undefined){
     let body = (<HTMLIFrameElement>document.getElementById("area").firstChild.firstChild.firstChild).contentWindow.document.querySelectorAll("body")[0];
@@ -278,14 +284,12 @@ export class ReadingPage implements OnInit {
   }
 
   async updateLatestPos(){
-    console.log("---------")
-
-
-    console.log(rendition.currentLocation().start.cfi.toString())
-
-    await this.storageService.set(bookTitle, rendition.currentLocation().start.cfi.toString());
-
-    console.log(await this.storageService.get(bookTitle))
+    try{
+      this.storageService.set(bookTitle, rendition.currentLocation().start.cfi.toString());
+    }
+    catch (e) {
+      console.log("missingCfi")
+    }
   }
 
   toggleMenu(){
