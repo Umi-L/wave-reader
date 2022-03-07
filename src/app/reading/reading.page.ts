@@ -91,7 +91,11 @@ export class ReadingPage implements OnInit {
 
         rendition.display(latestCfi);
 
-        this.startInitLoop();
+        speechSynthesis.cancel()
+
+        setTimeout(() =>{
+          this.startInitLoop();
+        }, 100)
 
       }, 100)
     }
@@ -155,7 +159,6 @@ export class ReadingPage implements OnInit {
         clearInterval(initLoop);
       }
       catch (e) {
-        console.log("ahhhhhhhhh")
       }
 
     }, 300)
