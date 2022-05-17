@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { SettingsService } from '../settings.service';
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
 
 @Component({
   selector: 'app-settings',
@@ -36,10 +37,11 @@ export class SettingsPage implements OnInit {
 
 
 
-    const initLoop = setInterval(() =>{
+    const initLoop = setInterval(async () =>{
       try{
-        let voices = speechSynthesis.getVoices();
-        
+        let voices:any = await TextToSpeech.getSupportedVoices();
+        voices = voices["voices"]
+
         if (voices.length > 0){
           clearInterval(initLoop);
           for (let i = 0; i < voices.length; i++){

@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import {DataPassService} from '../data-pass.service';
-import {Router} from '@angular/router'
-import{StorageService} from '../storage.service'
-import{SettingsService} from '../settings.service'
-
+import { DataPassService } from '../data-pass.service';
+import { Router } from '@angular/router'
+import { StorageService } from '../storage.service'
+import { SettingsService } from '../settings.service'
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
 
 declare var ePub: any;
 var rendition;
@@ -23,9 +23,9 @@ var menuShown = true;
 })
 export class ReadingPage implements OnInit {
 
-  constructor(private router:Router, private dataPassService: DataPassService, private storageService:StorageService, private settings:SettingsService) { }
-  
-  async ngOnInit(){
+  constructor(private router: Router, private dataPassService: DataPassService, private storageService: StorageService, private settings: SettingsService) { }
+
+  async ngOnInit() {
 
     //wait for settings service to be initialized
     await this.settings.init();
@@ -35,7 +35,7 @@ export class ReadingPage implements OnInit {
 
     //check if data was passed
     if (data == 0)
-      this.router.navigateByUrl('/home', { replaceUrl: true }) ;
+      this.router.navigateByUrl('/home', { replaceUrl: true });
 
     bookTitle = data[1];
 
@@ -49,10 +49,10 @@ export class ReadingPage implements OnInit {
     rendition = book.renderTo("area", { method: "default", width: "100%", height: "100%", allowScriptedContent: allowScripts, spread: false });
 
     //set light mode and dark mode by checking settings and injecting style sheet
-    if (this.settings.get("displayMode") == "dark"){
+    if (this.settings.get("displayMode") == "dark") {
       rendition.themes.default("../assets/bookStyles/darkSheet.css")
     }
-    else{
+    else {
       rendition.themes.default("../assets/bookStyles/lightSheet.css")
     }
 
@@ -60,22 +60,22 @@ export class ReadingPage implements OnInit {
     let latestCfi = await this.storageService.get(bookTitle);
 
     var displayed;
-    if (latestCfi != undefined){
+    if (latestCfi != undefined) {
       //if latest cfi exists then display to that
       displayed = rendition.display(latestCfi);
 
       var started = false;
 
       //super hacky fix to epubjs bug where display(cfi) jumps to start of chapter not actual page location
-      rendition.on("started", () =>{
-        if (!started){
+      rendition.on("started", () => {
+        if (!started) {
           rendition.display(latestCfi);
           console.log("2nd")
           started = true;
         }
       })
 
-    }else{
+    } else {
       //else just display at start of book
       displayed = rendition.display()
     }
@@ -91,12 +91,12 @@ export class ReadingPage implements OnInit {
     var resizeTimer;
     window.onresize = () => {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout( async () =>{
+      resizeTimer = setTimeout(async () => {
         //trying to fetch current cfi value, if thats not loaded just get the latest saved one from storage.
-        try{
+        try {
           let latestCfi = rendition.currentLocation().start.cfi
         }
-        catch(e){
+        catch (e) {
           let latestCfi = this.storageService.get(bookTitle);
         }
 
@@ -104,27 +104,27 @@ export class ReadingPage implements OnInit {
         rendition.display(latestCfi);
 
         //clear tts cache to fix any errors with text to speech not persisting over re render
-        speechSynthesis.cancel()
+        TextToSpeech.stop();
 
-        setTimeout(() =>{
+        setTimeout(() => {
           //initialize window after rendered
           this.startInitLoop();
         }, 100)
 
       }, 100)
-    } 
+    }
   }
 
   //initializes window controls
-  startInitLoop(){
-    const initLoop = setInterval(() =>{
+  startInitLoop() {
+    const initLoop = setInterval(() => {
       //try to get book iframe if it doesn't exist retry until it exists.
-      try{
+      try {
         var doc = (<HTMLIFrameElement>document.getElementById("area").firstChild.firstChild.firstChild).contentWindow.document;
         console.log("passedError")
 
         //register double click handler to start tts
-        doc.ondblclick =  (e) => {
+        doc.ondblclick = (e) => {
           console.log("dbClickRegistered")
           this.readPageByElements(e.target);
         };
@@ -138,82 +138,76 @@ export class ReadingPage implements OnInit {
     }, 300)
   }
 
-  pageRight(){
+  pageRight() {
     //flips page
     rendition.next();
 
     //update book position after page turn, must be in a delay because it takes time to change chapters.
-    setTimeout(() =>{
+    setTimeout(() => {
       this.updateLatestPos();
     }, 1000)
 
     //clear tts cache
-    window.speechSynthesis.cancel()
+    TextToSpeech.stop();
   }
-  pageLeft(){
+  pageLeft() {
     //flips page
     rendition.prev()
 
     //update book position after page turn, must be in a delay because it takes time to change chapters.
-    setTimeout(() =>{
+    setTimeout(() => {
       this.updateLatestPos();
     }, 1000)
 
     //clear tts cache
-    window.speechSynthesis.cancel()
+    TextToSpeech.stop();
   }
 
-  //reads a line of text using the speechSynthisis api
+  //reads a line of text using the SpeechSynthesis api
   //takes a start and end callback function
-  async readTTS(line:string, start = undefined, end = undefined){
-    //check for speechSynthisis support in browser
-    if ('speechSynthesis' in window) {
-      
-      //create utterance with settings
-      var to_speak = new SpeechSynthesisUtterance(line);
-      to_speak.rate = this.settings.get("ttsRate");
-      to_speak.pitch = this.settings.get("ttsPitch");
-      to_speak.volume = this.settings.get("ttsVolume");
-
-      let voiceName = this.settings.get("ttsVoice");
-
-      // if coustom voice find the voice component from the name and read using that
-      if (voiceName != undefined) {
-        speechSynthesis.getVoices().forEach((voice) => {
-          if (voice.name == voiceName) {
-            to_speak.voice = voice;
-          }
-        })
-      }
-
-      //setting callbacks in params
-      if (end != undefined){
-        to_speak.onend = end;
-      }
-      if (start != undefined){
-        to_speak.onstart = start;
-      }
-
-      //read line
-      window.speechSynthesis.speak(to_speak);
+  async readTTS(line: string, start = undefined, end = undefined) {
+    let speechParams = {
+      text: line,
+      lang: "en_US",
+      rate: this.settings.get("ttsRate"),
+      pitch: this.settings.get("ttsPitch"),
+      volume: this.settings.get("ttsVolume"),
+      category: "playback"
     }
-    else{
-      alert("tts not supported")
+
+    let voiceName = this.settings.get("ttsVoice");
+
+    let voices: any = await TextToSpeech.getSupportedVoices();
+    voices = voices["voices"]
+
+    // if coustom voice find the voice component from the name and read using that
+    if (voiceName != undefined) {
+      voices.forEach((voice) => {
+        if (voice.name == voiceName) {
+          speechParams["voice"] = voice;
+        }
+      })
     }
+
+    start();
+
+    await TextToSpeech.speak(speechParams);
+
+    end();
   }
 
-  readPageByElements(startElement = undefined){
+  async readPageByElements(startElement = undefined) {
     //get body element from book iframe
     let body = (<HTMLIFrameElement>document.getElementById("area").firstChild.firstChild.firstChild).contentWindow.document.querySelectorAll("body")[0];
 
     //check for delay between chapters
-    if (delayInterval != undefined){
+    if (delayInterval != undefined) {
       //check if next chapter is rendered
-      if (rendition.currentLocation().start != undefined){
+      if (rendition.currentLocation().start != undefined) {
         //clear interval and continue reading
         clearInterval(delayInterval);
         delayInterval = undefined;
-      }else{
+      } else {
         //return to break from func if chapter not loaded
         return
       }
@@ -223,9 +217,9 @@ export class ReadingPage implements OnInit {
     let lines = this.getTextElements(body);
 
     //if location to start on page is defined
-    if (startElement != undefined){
+    if (startElement != undefined) {
       //check elements found on page for start element
-      if (lines.includes(startElement)){
+      if (lines.includes(startElement)) {
         //set start index to index of start element
         const index = lines.indexOf(startElement);
 
@@ -233,9 +227,9 @@ export class ReadingPage implements OnInit {
         lines = lines.slice(index);
 
         //cancel all already running speech
-        window.speechSynthesis.cancel();
+        TextToSpeech.stop();
       }
-      else{
+      else {
         //start element not found in lines
         console.log("not found")
         return
@@ -243,66 +237,68 @@ export class ReadingPage implements OnInit {
     }
 
     //if no lines
-    if (lines.length == 0){
+    if (lines.length == 0) {
       //change pages
       rendition.next()
 
       //set page turn loop
-      delayInterval = setInterval(() => {      
+      delayInterval = setInterval(() => {
         this.updateLatestPos();
-        this.readPageByElements(); 
+        this.readPageByElements();
       }, 100);
     }
 
     //for every line
-    lines.forEach((item, i) => {
-      //read the text of the line
-      this.readTTS(item.innerText,()=>{
+    for (let i = 0; i < lines.length; i++) {
+      var item = lines[i];
+
+      //read the text of the line and wait for it to be completed
+      await this.readTTS(item.innerText, () => {
         //set highlight on currently reading element
-        if (this.settings.get("displayMode") == "dark"){
+        if (this.settings.get("displayMode") == "dark") {
           item.style.backgroundColor = "#965300";
         }
-        else if(this.settings.get("displayMode") == "light"){
+        else if (this.settings.get("displayMode") == "light") {
           item.style.backgroundColor = "#F18500";
         }
       },
-      ()=>{
-        //clear background highlight on end of reading that line
-        item.style.backgroundColor = ""
+        () => {
+          //clear background highlight on end of reading that line
+          item.style.backgroundColor = ""
 
-        //if last line finish reading
-        if (i + 1 == lines.length){
-          //go to next page and run page turn interval
-          rendition.next()
-          delayInterval = setInterval(() => {      
-            this.updateLatestPos();
-            this.readPageByElements(); 
-          }, 100);
-        }
-      });
-    })
+          //if last line finish reading
+          if (i + 1 == lines.length) {
+            //go to next page and run page turn interval
+            rendition.next()
+            delayInterval = setInterval(() => {
+              this.updateLatestPos();
+              this.readPageByElements();
+            }, 100);
+          }
+        });
+    }
   }
 
-  readButtonPressed(){
+  readButtonPressed() {
     //if not reading read page
-    if (!window.speechSynthesis.speaking){
+    if (!window.speechSynthesis.speaking) {
       this.readPageByElements();
     }
-    
-    else{
+
+    else {
       //if paused resume
-      if (speechSynthesis.paused){
+      if (speechSynthesis.paused) {
         speechSynthesis.resume();
       }
       //if playing pause
-      else{
+      else {
         window.speechSynthesis.pause();
       }
     }
   }
 
-  async updateLatestPos(){
-    try{
+  async updateLatestPos() {
+    try {
       //set current location of book to current location
       this.storageService.set(bookTitle, rendition.currentLocation().start.cfi.toString());
     }
@@ -312,7 +308,7 @@ export class ReadingPage implements OnInit {
     }
   }
 
-  toggleMenu(){
+  toggleMenu() {
     if (menuShown)
       document.getElementById("menu-container").style.display = "none";
     else
@@ -320,21 +316,21 @@ export class ReadingPage implements OnInit {
     menuShown = !menuShown;
   }
 
-  getTextElements(element){
+  getTextElements(element) {
     //get all children of element
     let all = element.querySelectorAll("*");
     let cache = []
 
     //for ever found element
-    all.forEach((ele:any)=>{
+    all.forEach((ele: any) => {
       //element contains text
-      if (ele.innerText != undefined && ele.innerText.length > 0){
+      if (ele.innerText != undefined && ele.innerText.length > 0) {
         //if element is visisble
-        if (this.isInViewport(ele)){
+        if (this.isInViewport(ele)) {
           //if element has less than 5 decendents
-          if (ele.querySelectorAll("*").length < 5){
+          if (ele.querySelectorAll("*").length < 5) {
             //if parent element is not already within cache
-            if (!cache.includes(ele.parentElement)){
+            if (!cache.includes(ele.parentElement)) {
               //add element to cache
               cache.push(ele);
             }
@@ -351,7 +347,7 @@ export class ReadingPage implements OnInit {
     const iframeRect = iframe.getBoundingClientRect();
     const rect = element.getBoundingClientRect();
 
-    if (rect.left >= Math.abs(iframeRect.left) && rect.left <= (window.innerWidth - iframeRect.left || document.documentElement.clientWidth - iframeRect.left)){
+    if (rect.left >= Math.abs(iframeRect.left) && rect.left <= (window.innerWidth - iframeRect.left || document.documentElement.clientWidth - iframeRect.left)) {
       return true
     }
     return false
